@@ -2,29 +2,24 @@ const express = require('express');
 const path = require('path');
 const dotenv = require('dotenv');
 const connectDB = require('./db/conn');
+const { authenticateJWT } = require('./middleware/auth');
 
 // Load environment variables
 dotenv.config();
+
+// Debugging the loaded environment variables
+console.log('Environment Variables:', {
+    PORT: process.env.PORT,
+    MONGO_URI: process.env.MONGO_URI,
+    JWT_SECRET: process.env.JWT_SECRET,
+    SESSION_SECRET: process.env.SESSION_SECRET,
+});
 
 // Initialize the app
 const app = express();
 
 // Connect to the database
 connectDB();
-
-const Task = require('./db/taskModel');
-
-app.get('/', async (req, res) => {
-    try {
-        // Fetch tasks from the database (for the demo, we use all tasks)
-        const tasks = await Task.find();
-        res.render('dashboard', { tasks });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server error');
-    }
-});
-
 
 // Middleware for parsing requests
 app.use(express.json());
@@ -38,13 +33,25 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/tasks', require('./routes/tasks'));
-
-// Default route for the home page
 app.get('/', (req, res) => {
+    res.redirect('/login');
+});
+
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+app.get('/register', (req, res) => {
+    res.render('register');
+});
+
+app.get('/dashboard', authenticateJWT, (req, res) => {
     res.render('dashboard', { title: 'TaskMaster Dashboard' });
 });
+
+// API routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/tasks', require('./routes/tasks'));
 
 // Handle 404 errors
 app.use((req, res, next) => {
