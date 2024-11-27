@@ -3,51 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Taskmaster Dashboard</title>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">TaskMaster Dashboard</h1>
-        <div>
-            <h3>Your Tasks</h3>
-            <p class="text-center">Task management functionality will go here.</p>
-        </div>
-    </div>
+<body>
+    <h1>Welcome, <%= user.username %>!</h1>
+    <h2>Your Tasks</h2>
 
-    <script>
-        function getAuthHeaders() {
-            const token = localStorage.getItem('token');
-            console.log('Token from localStorage:', token);  // Debug log
-            if (!token) {
-                alert('Unauthorized! Redirecting to login.');
-                window.location.href = '/login';  // Redirect to login if token is missing
-            }
-            return {
-                Authorization: `Bearer ${token}`,  // Include token in Authorization header
-                'Content-Type': 'application/json',
-            };
-        }
+    <% if (tasks && tasks.length > 0) { %>
+        <ul>
+            <% tasks.forEach(task => { %>
+                <li>
+                    <strong><%= task.title %></strong> - <%= task.description %> 
+                    <% if (task.completed) { %>
+                        (Completed)
+                    <% } else { %>
+                        (Pending)
+                    <% } %>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <p>No tasks available. Create one to get started!</p>
+    <% } %>
 
-        // Example: Fetch tasks using the token
-        fetch('/api/tasks', {
-            method: 'GET',
-            headers: getAuthHeaders(),  // Add Authorization header
-        })
-            .then(response => {
-                if (response.status === 401 || response.status === 403) {
-                    alert('Session expired. Please log in again.');
-                    window.location.href = '/login';  // Redirect to login if token is invalid
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Tasks:', data);  // Handle tasks
-            })
-            .catch(error => {
-                console.error('Error fetching tasks:', error);
-            });
-    </script>
+    <form action="/tasks/create" method="POST">
+        <h3>Create a New Task</h3>
+        <input type="text" name="title" placeholder="Task Title" required>
+        <input type="text" name="description" placeholder="Task Description" required>
+        <button type="submit">Add Task</button>
+    </form>
 </body>
 </html>
 

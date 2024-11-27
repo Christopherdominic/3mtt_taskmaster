@@ -45,8 +45,8 @@ app.get('/register', (req, res) => {
     res.render('register');
 });
 
-app.get('/dashboard', authenticateJWT, (req, res) => {
-    res.render('dashboard', { title: 'TaskMaster Dashboard' });
+app.get('/dashboard', (req, res) => {
+    res.render('dashboard', { user: req.user || null });
 });
 
 // API routes
