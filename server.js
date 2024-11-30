@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const path = require('path');
+require('dotenv').config(); // To use environment variables from .env file
 
 const app = express();
 app.use(bodyParser.json());
@@ -12,11 +13,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const SECRET_KEY = 'supersecretkey';
+const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkey';  // Use environment variable for secret key
 
-// MongoDB connection URI
-const uri = 'mongodb://localhost:27017';
-const dbName = 'task_management';
+// MongoDB connection URI from environment variable
+const uri = process.env.MONGO_URI; // Use environment variable for MongoDB URI
+const dbName = 'task_management'; 
 let db, usersCollection, tasksCollection;
 
 // Connect to MongoDB
@@ -31,11 +32,10 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
     console.error('Error connecting to MongoDB:', err);
   });
 
-// Middleware to verify JWT token
 function verifyToken(req, res, next) {
     const token = req.cookies.token;
     if (!token) return res.redirect('/login.html');
-    
+
     jwt.verify(token, SECRET_KEY, (err, decoded) => {
         if (err) return res.redirect('/login.html');
         req.userId = decoded.id;
@@ -65,7 +65,7 @@ app.post('/login', async (req, res) => {
         const user = await usersCollection.findOne({ email });
         if (!user) return res.redirect('/login.html?error=1');
 
-        const passwordIsValid = bcrypt.compareSync(password, user.password);
+        const passwordIsValid = bcrypt.compareSync(password, user.password);   
         if (!passwordIsValid) return res.redirect('/login.html?error=1');
 
         const token = jwt.sign({ id: user._id }, SECRET_KEY, { expiresIn: 86400 });
@@ -97,9 +97,9 @@ app.get('/tasks', verifyToken, async (req, res) => {
 // Create a new task
 app.post('/tasks/create', verifyToken, async (req, res) => {
     const { title, description, due_date, status } = req.body;
-    
+
     try {
-        await tasksCollection.insertOne({
+        await tasksCollection.insertOne({        
             title,
             description,
             due_date,
