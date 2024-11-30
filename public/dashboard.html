@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Task Dashboard</h1>
+        <a href="/create_task.html" class="btn">Create New Task</a>
+        <a href="/logout" class="btn">Logout</a>
+        <h2>Your Tasks</h2>
+        <table id="tasks">
+            <!-- Task rows will be populated here via JavaScript -->
+        </table>
+    </div>
+
+    <!-- Update Task Modal -->
+    <div id="updateModal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Update Task</h2>
+            <form id="updateTaskForm" method="POST">
+                <label for="updateTitle">Title:</label>
+                <input type="text" id="updateTitle" name="title" required>
+
+                <label for="updateDescription">Description:</label>
+                <textarea id="updateDescription" name="description"></textarea>
+
+                <label for="updateDueDate">Due Date:</label>
+                <input type="date" id="updateDueDate" name="due_date">
+
+                <label for="updateStatus">Status:</label>
+                <select id="updateStatus" name="status">
+                    <option value="To Do">To Do</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+
+                <input type="hidden" id="updateTaskId" name="task_id">
+                <button type="submit">Update Task</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Fetch and display tasks
+        fetch('/tasks')
+        .then(response => response.json())
+        .then(tasks => {
+            const tasksTable = document.getElementById('tasks');
+            tasksTable.innerHTML = `
+                <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            `;
+            tasks.forEach(task => {
+                const row = `
+                    <tr>
+                        <td>${task.title}</td>
+                        <td>${task.description}</td>
+                        <td>${task.due_date}</td>
+                        <td>${task.status}</td>
+                        <td>
+                            <button onclick="openModal(${task.task_id}, '${task.title}', '${task.description}', '${task.due_date}', '${task.status}')">Update</button>
+                            <form action="/tasks/delete/${task.task_id}" method="POST" style="display:inline;">
+                                <button type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                `;
+                tasksTable.innerHTML += row;
+            });
+        });
+
+        // Open modal for updating task
+        function openModal(taskId, title, description, dueDate, status) {
+            document.getElementById('updateTaskId').value = taskId;
+            document.getElementById('updateTitle').value = title;
+            document.getElementById('updateDescription').value = description;
+            document.getElementById('updateDueDate').value = dueDate;
+            document.getElementById('updateStatus').value = status;
+            document.getElementById('updateModal').style.display = 'block';
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('updateModal').style.display = 'none';
+        }
+
+        // Handle the update form submission
+        document.getElementById('updateTaskForm').onsubmit = function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const taskId = formData.get('task_id');
+            fetch(`/tasks/update/${taskId}`, {
+                method: 'POST',
+                body: formData,
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        };
+    </script>
+</body>
+</html>
